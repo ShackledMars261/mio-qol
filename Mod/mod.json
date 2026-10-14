@@ -1,0 +1,8 @@
+{
+  "id": "io.github.ShackledMars261.QoL",
+  "name": "QoL",
+  "main": "QoL.dll",
+  "dependencies": [
+    "io.github.mio-modding.mio-modding-api"
+  ]
+}

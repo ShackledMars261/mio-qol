@@ -1,0 +1,71 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="PolyHook2.NET" Version="1.1.3" ExcludeAssets="runtime;native" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="MioModdingApi">
+			<HintPath>../lib/MioModdingApi.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="MioModLoader">
+			<HintPath>../lib/MioModLoader.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="MioBinds">
+			<HintPath>../lib/MioBinds.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<Target Name="FlattenNativeAssets" BeforeTargets="PostBuild">
+		<ItemGroup>
+			<NativeAsset Include="$(TargetDir)runtimes\win-x64\native\*.dll" />
+			<NativeAsset Include="$(TargetDir)runtimes\win\native\*.dll" />
+		</ItemGroup>
+
+		<Copy SourceFiles="@(NativeAsset)"
+			  DestinationFolder="$(TargetDir)"
+			  SkipUnchangedFiles="true" />
+
+		<Message Importance="high"
+				 Text="Flattened native: %(NativeAsset.Filename)%(NativeAsset.Extension)" />
+	</Target>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="call &quot;$(ProjectDir)post-build.bat&quot; &quot;$(TargetPath)&quot; &quot;$(ProjectName)&quot; &quot;$(TargetDir)&quot;" WorkingDirectory="$(ProjectDir)" />
+	</Target>
+
+	<PropertyGroup>
+		<!-- CI=true on GitHub Actions, where there is no game to deploy into. -->
+		<DeployToGame Condition="'$(DeployToGame)' == '' And '$(CI)' == 'true'">false</DeployToGame>
+		<DeployToGame Condition="'$(DeployToGame)' == ''">true</DeployToGame>
+		<GameModsDir Condition="'$(GameModsDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\MIO\mods\QoL</GameModsDir>
+	</PropertyGroup>
+
+	<Target Name="DeployToGame" AfterTargets="PostBuild" Condition="'$(DeployToGame)' == 'true'">
+		<PropertyGroup>
+			<StageDir>$(ProjectDir)bin\$(ProjectName)</StageDir>
+		</PropertyGroup>
+
+		<Exec Command="robocopy &quot;$(StageDir)&quot; &quot;$(GameModsDir)&quot; /MIR /NFL /NDL /NJH /NJS /NP"
+			  IgnoreExitCode="true"
+			  ContinueOnError="true">
+			<Output TaskParameter="ExitCode" PropertyName="RobocopyExit" />
+		</Exec>
+
+		<Warning Condition="'$(RobocopyExit)' &gt;= 8"
+				 Text="Deploy to &quot;$(GameModsDir)&quot; failed (robocopy $(RobocopyExit)). Is the game running?" />
+		<Message Condition="'$(RobocopyExit)' &lt; 8" Importance="high"
+				 Text="Deployed to $(GameModsDir)" />
+	</Target>
+</Project>
