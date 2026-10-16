@@ -51,7 +51,7 @@ namespace QoL.Managers
         /// Grant UNLOCK:SLASH like the vanilla exit gate does. Off for now: the Samsk cutscene
         /// appears to grant it as well. Turn back on if slash turns out to be missing.
         /// </summary>
-        private static readonly bool GrantSlash = false;
+        private static readonly bool GrantSlash = true;
 
         /// <summary>
         /// Where the exit gate sends Mio (start of the Samsk cutscene in ST_security_fall_P1),
